@@ -197,4 +197,4 @@ left outer join
   combine_Subscribers as c
 on
   u.OMO_ID = c.Account__Account_Number
-order by Count_Platform desc
+order by Subscribe_time desc
