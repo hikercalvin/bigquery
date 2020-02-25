@@ -20,7 +20,9 @@ WITH
       sign(sum(case when action ="Subscribe" then 1 else 0 end) over(partition by OMO_Members order by timestamp desc
       rows between unbounded preceding and current row))
      as has_conversion
-     FROM `ga360-203507.sample_data_GA.action_log`)
+     FROM `ga360-203507.sample_data_GA.action_log`
+     where Content_Title is not null 
+     and regexp_contains(hit_type,'PAGE|APPVIEW'))
       
 select 
   *

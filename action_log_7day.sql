@@ -175,7 +175,7 @@ Hits_log AS(
     `ga360-203507.178178607.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 union all
@@ -355,7 +355,7 @@ union all
     `ga360-203507.75307673.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 union all
@@ -535,7 +535,7 @@ SELECT
     `ga360-203507.75701445.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 )
@@ -583,7 +583,7 @@ SELECT
     `ga360-203507.178178607.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
   )
  
@@ -676,10 +676,124 @@ where ROW=1)
   ORDER BY
     timestamp)
 
+,combine_sub as(
+    select 
+      date,
+      timestamp,
+      Users,
+      Sessions,
+      OMO_Members,
+      bounces,
+      Sessions_count,
+      hits_count,
+      hitnumber,
+      hit_type,
+      hit_time_log,
+      Event_Category,
+      Event_Action,
+      Event_Label,
+      Event_Value,
+      total_Pageviews,
+      total_Screenviews,
+      total_timeOnSite,
+      Navigation_Channel,
+      Navigation_Section,
+      Page_Type,
+      Content_News_Type,
+      Content_Source,
+      Registered_Session,
+      Content_View,
+      Video_View,
+      channelGrouping,
+      source,
+      medium,
+      referralPath,
+      pagepath,
+      browser,
+      LANGUAGE,
+      geo_continent,
+      geo_subContinent,
+      geo_country,
+      geo_region,
+      metro,
+      city,
+      User_Gender,
+      User_DOB,
+      Content_Block,
+      Platform,
+      Lon_Lat,
+      Country,
+      State,
+      Language_Setting,
+      OMO_Product,
+      Content_ID,
+      Content_Title,
+      Content_Category,
+      Content_Publish_Date,
+      NUll as action,
+    FROM Hits_log_tw
+      
+union all
+   
+   select  
+      NULL as date,
+      Rate_Plan_Charge__Created_Date as timestamp,
+      NULL as Users,
+      NULL as Sessions,
+      Account__Account_Number as OMO_Members,
+      NULL as bounces,
+      NULL as Sessions_count,
+      NULL as hits_count,
+      NULL as hitnumber,
+      NULL as hit_type,
+      NULL as hit_time_log,
+      NULL as Event_Category,
+      NULL as Event_Action,
+      NULL as Event_Label,
+      NULL as Event_Value,
+      NULL as total_Pageviews,
+      NULL as total_Screenviews,
+      NULL as total_timeOnSite,
+      NULL as Navigation_Channel,
+      NULL as Navigation_Section,
+      NULL as Page_Type,
+      NULL as Content_News_Type,
+      NULL as Content_Source,
+      NULL as Registered_Session,
+      NULL as Content_View,
+      NULL as Video_View,
+      NULL as channelGrouping,
+      NULL as source,
+      NULL as medium,
+      NULL as referralPath,
+      NULL as pagepath,
+      NULL as browser,
+      NULL as LANGUAGE,
+      NULL as geo_continent,
+      NULL as geo_subContinent,
+      NULL as geo_country,
+      NULL as geo_region,
+      NULL as metro,
+      NULL as city,
+      NULL as User_Gender,
+      NULL as User_DOB,
+      NULL as Content_Block,
+      NULL as Platform,
+      NULL as Lon_Lat,
+      NULL as Country,
+      NULL as State,
+      NULL as Language_Setting,
+      NULL as OMO_Product,
+      NULL as Content_ID,
+      NULL as Content_Title,
+      NULL as Content_Category,
+      NULL as Content_Publish_Date,
+      "Subscribe" as action       
+    FROM `nd-data-poc.zuora.ZuoraSubscribe` )
 
 SELECT
    *
 FROM
-  Hits_log_tw
+  combine_sub
 ORDER BY
-   date desc
+   timestamp

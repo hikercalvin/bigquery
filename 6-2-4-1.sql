@@ -175,7 +175,7 @@ Hits_log AS(
     `ga360-203507.178178607.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 union all
@@ -355,7 +355,7 @@ union all
     `ga360-203507.75307673.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 union all
@@ -535,7 +535,7 @@ SELECT
     `ga360-203507.75701445.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
 
 )
@@ -583,7 +583,7 @@ SELECT
     `ga360-203507.178178607.ga_sessions_*` ga,
     UNNEST(hits) AS hit
   WHERE
-    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 28 DAY ))
+    _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY ))
     AND FORMAT_DATE('%Y%m%d',DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
   )
  
@@ -676,10 +676,176 @@ where ROW=1)
   ORDER BY
     timestamp)
 
+,combine_sub as(
+    select 
+      date,
+      timestamp,
+      Users,
+      Sessions,
+      OMO_Members,
+      bounces,
+      Sessions_count,
+      hits_count,
+      hitnumber,
+      hit_type,
+      hit_time_log,
+      Event_Category,
+      Event_Action,
+      Event_Label,
+      Event_Value,
+      total_Pageviews,
+      total_Screenviews,
+      total_timeOnSite,
+      Navigation_Channel,
+      Navigation_Section,
+      Page_Type,
+      Content_News_Type,
+      Content_Source,
+      Registered_Session,
+      Content_View,
+      Video_View,
+      channelGrouping,
+      source,
+      medium,
+      referralPath,
+      pagepath,
+      browser,
+      LANGUAGE,
+      geo_continent,
+      geo_subContinent,
+      geo_country,
+      geo_region,
+      metro,
+      city,
+      User_Gender,
+      User_DOB,
+      Content_Block,
+      Platform,
+      Lon_Lat,
+      Country,
+      State,
+      Language_Setting,
+      OMO_Product,
+      Content_ID,
+      Content_Title,
+      Content_Category,
+      Content_Publish_Date,
+      NUll as action,
+    FROM Hits_log_tw
+      
+union all
+   
+   select  
+      NULL as date,
+      Rate_Plan_Charge__Created_Date as timestamp,
+      NULL as Users,
+      NULL as Sessions,
+      Account__Account_Number as OMO_Members,
+      NULL as bounces,
+      NULL as Sessions_count,
+      NULL as hits_count,
+      NULL as hitnumber,
+      NULL as hit_type,
+      NULL as hit_time_log,
+      NULL as Event_Category,
+      NULL as Event_Action,
+      NULL as Event_Label,
+      NULL as Event_Value,
+      NULL as total_Pageviews,
+      NULL as total_Screenviews,
+      NULL as total_timeOnSite,
+      NULL as Navigation_Channel,
+      NULL as Navigation_Section,
+      NULL as Page_Type,
+      NULL as Content_News_Type,
+      NULL as Content_Source,
+      NULL as Registered_Session,
+      NULL as Content_View,
+      NULL as Video_View,
+      NULL as channelGrouping,
+      NULL as source,
+      NULL as medium,
+      NULL as referralPath,
+      NULL as pagepath,
+      NULL as browser,
+      NULL as LANGUAGE,
+      NULL as geo_continent,
+      NULL as geo_subContinent,
+      NULL as geo_country,
+      NULL as geo_region,
+      NULL as metro,
+      NULL as city,
+      NULL as User_Gender,
+      NULL as User_DOB,
+      NULL as Content_Block,
+      NULL as Platform,
+      NULL as Lon_Lat,
+      NULL as Country,
+      NULL as State,
+      NULL as Language_Setting,
+      NULL as OMO_Product,
+      NULL as Content_ID,
+      NULL as Content_Title,
+      NULL as Content_Category,
+      NULL as Content_Publish_Date,
+      "Subscribe" as action       
+    FROM `nd-data-poc.zuora.ZuoraSubscribe` )
 
+  ,activity_log_with_conversion_flag as (
+    select
+      Users,
+      OMO_Members,
+      Sessions,
+      Sessions_count,
+      bounces,
+      timestamp,
+      Content_Category,
+      Content_Title,
+      Event_Category,
+      Event_Action,
+      Event_Label,
+      hit_type,
+      hits_count,
+      hitnumber,
+      pagepath,
+      action,
+      sign(sum(case when action ="Subscribe" then 1 else 0 end) over(partition by OMO_Members order by timestamp, hitnumber desc
+      rows between unbounded preceding and current row))
+     as has_conversion
+     FROM `ga360-203507.sample_data_GA.action_log`
+     where regexp_contains(hit_type,'PAGE|APPVIEW'))
+      
+,activity_log_with_assing as(
+  SELECT
+    OMO_Members,
+    timestamp,
+    Content_Title,
+    action,
+    hitnumber,
+    hit_type,
+    has_conversion,
+    ROW_NUMBER() over(partition by OMO_Members order by timestamp, hitnumber asc) as asc_order,
+    ROW_NUMBER() over(partition by OMO_Members  order by timestamp, hitnumber desc) as desc_order,
+    count(1) over(partition by OMO_Members) as page_count,
+    120.0/count(1) over(partition by OMO_Members) as fair_assign,
+    '''case
+      when ROW_NUMBER() over(partition by OMO_Members order by timestamp, hitnumber asc) =1 
+        then 120.0
+      else 0.0
+    end as first_assign,
+    case
+      when ROW_NUMBER() over(partition by OMO_Members order by timestamp, hitnumber desc) =1 
+        then 120.0
+      else 0.0
+    end as last_assign,
+    120.0 * ROW_NUMBER() over(partition by OMO_Members order by timestamp, hitnumber asc) / ( count(1) over(partition by OMO_Members) * (count(1) over(partition by OMO_Members) + 1) /2)
+    as decrease_assign,
+    120.0 * ROW_NUMBER() over(partition by OMO_Members order by timestamp, hitnumber desc) / ( count(1) over(partition by OMO_Members) * (count(1) over(partition by OMO_Members) + 1) /2)
+    as increase_assign'''
+  FROM activity_log_with_conversion_flag
+  where has_conversion=1 and Content_Title is not null
+)
 SELECT
-   *
-FROM
-  Hits_log_tw
-ORDER BY
-   date desc
+  *
+FROM activity_log_with_assing
+order by asc_order desc
